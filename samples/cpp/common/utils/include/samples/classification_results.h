@@ -152,11 +152,18 @@ public:
                 std::cout.precision(7);
                 // Getting probability for resulting class
                 const auto index = _results.at(id) + image_id * (_outTensor.get_size() / _batchSize);
-                const auto result = _outTensor.data<const float>()[index];
-
-                std::cout << std::setw(static_cast<int>(_classidStr.length())) << std::left << _results.at(id) << " ";
-                std::cout << std::left << std::setw(static_cast<int>(_probabilityStr.length())) << std::fixed << result;
-
+            
+                ov::element::Type output_type = _outTensor.get_element_type();
+                if (output_type == ov::element::f16) {
+                    const auto result = _outTensor.data<ov::float16>()[index];
+                    std::cout << std::setw(static_cast<int>(_classidStr.length())) << std::left << _results.at(id) << " ";
+                    std::cout << std::left << std::setw(static_cast<int>(_probabilityStr.length())) << std::fixed << result;
+                }
+                else if (output_type == ov::element::f32) {
+                    const auto result2 = _outTensor.data<const float>()[index];
+                    std::cout << std::setw(static_cast<int>(_classidStr.length())) << std::left << _results.at(id) << " ";
+                    std::cout << std::left << std::setw(static_cast<int>(_probabilityStr.length())) << std::fixed << result2;
+                }
                 if (!_labels.empty()) {
                     std::cout << " " + _labels[_results.at(id)];
                 }
