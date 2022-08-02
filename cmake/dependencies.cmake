@@ -23,7 +23,9 @@ message(STATUS "MODELS_PATH=" ${MODELS_PATH})
 
 fetch_models_and_validation_set()
 
-get_linux_name(LINUX_OS_NAME)
+if(COMMAND get_linux_name)
+    get_linux_name(LINUX_OS_NAME)
+endif()
 
 if(CMAKE_CROSSCOMPILING AND CMAKE_HOST_SYSTEM_NAME MATCHES Linux AND CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "amd64.*|x86_64.*|AMD64.*")
     set(protoc_version "3.18.2")
@@ -91,19 +93,7 @@ if(THREADING STREQUAL "OMP")
 endif()
 
 ## TBB package
-unset(_ov_download_tbb_done CACHE)
-
-#
-# The function downloads prebuilt TBB package
-# NOTE: the function should be used if system TBB is not found
-# or ENABLE_SYSTEM_TBB is OFF
-#
-function(ov_download_tbb)
-    if(_ov_download_tbb_done OR NOT THREADING MATCHES "^(TBB|TBB_AUTO)$")
-        return()
-    endif()
-    set(_ov_download_tbb_done ON CACHE BOOL "Whether prebuilt TBB is already downloaded")
-
+if(THREADING STREQUAL "TBB" OR THREADING STREQUAL "TBB_AUTO")
     reset_deps_cache(TBBROOT TBB_DIR)
 
     if(DEFINED ENV{THIRDPARTY_SERVER_PATH})
@@ -119,6 +109,16 @@ function(ov_download_tbb)
                 TARGET_PATH "${TEMP}/tbb"
                 ENVIRONMENT "TBBROOT"
                 SHA256 "f1c9b9e2861efdaa01552bd25312ccbc5feeb45551e5f91ae61e29221c5c1479")
+        if(ENABLE_TBBBIND_2_5)
+            RESOLVE_DEPENDENCY(TBBBIND_2_5
+                    ARCHIVE_WIN "tbbbind_2_5_static_win_v1.zip"
+                    TARGET_PATH "${TEMP}/tbbbind_2_5"
+                    ENVIRONMENT "TBBBIND_2_5_ROOT"
+                    SHA256 "a67afeea8cf194f97968c800dab5b5459972908295242e282045d6b8953573c1")
+        else()
+            message(WARNING "prebuilt TBBBIND_2_5 is not available.
+    Build oneTBB from sources and set TBBROOT environment var before OpenVINO cmake configure")
+        endif()
     elseif(ANDROID)  # Should be before LINUX due LINUX is detected as well
         RESOLVE_DEPENDENCY(TBB
                 ARCHIVE_ANDROID "tbb2020_20200404_android.tgz"
@@ -131,6 +131,16 @@ function(ov_download_tbb)
                 TARGET_PATH "${TEMP}/tbb"
                 ENVIRONMENT "TBBROOT"
                 SHA256 "95b2f3b0b70c7376a0c7de351a355c2c514b42c4966e77e3e34271a599501008")
+        if(ENABLE_TBBBIND_2_5)
+            RESOLVE_DEPENDENCY(TBBBIND_2_5
+                    ARCHIVE_LIN "tbbbind_2_5_static_lin_v2.tgz"
+                    TARGET_PATH "${TEMP}/tbbbind_2_5"
+                    ENVIRONMENT "TBBBIND_2_5_ROOT"
+                    SHA256 "865e7894c58402233caf0d1b288056e0e6ab2bf7c9d00c9dc60561c484bc90f4")
+        else()
+            message(WARNING "prebuilt TBBBIND_2_5 is not available.
+    Build oneTBB from sources and set TBBROOT environment var before OpenVINO cmake configure")
+        endif()
     elseif(LINUX AND AARCH64)
         RESOLVE_DEPENDENCY(TBB
                 ARCHIVE_LIN "keembay/tbb2020_38404_kmb_lic.tgz"
@@ -150,75 +160,25 @@ function(ov_download_tbb)
     update_deps_cache(TBBROOT "${TBB}" "Path to TBB root folder")
     if(EXISTS "${TBBROOT}/lib/cmake/TBB/TBBConfig.cmake")
         # oneTBB case
-        update_deps_cache(TBB_DIR "${TBBROOT}/lib/cmake/TBB" "Path to TBB cmake folder")
-    elseif(EXISTS "${TBBROOT}/lib64/cmake/TBB/TBBConfig.cmake")
-        # 64-bits oneTBB case
-        update_deps_cache(TBB_DIR "${TBBROOT}/lib64/cmake/TBB" "Path to TBB cmake folder")
-    elseif(EXISTS "${TBBROOT}/cmake/TBBConfig.cmake")
-        # custom downloaded or user provided TBB
-        update_deps_cache(TBB_DIR "${TBBROOT}/cmake" "Path to TBB cmake folder")
+        update_deps_cache(TBB_DIR "${TBB}/lib/cmake/TBB" "Path to TBB cmake folder")
     else()
-        message(WARNING "Failed to find TBBConfig.cmake in ${TBBROOT} tree. Custom TBBConfig.cmake will be used")
-    endif()
-
-    debug_message(STATUS "tbb=" ${TBB})
-    debug_message(STATUS "tbb_dir=" ${TBB_DIR})
-    debug_message(STATUS "tbbroot=" ${TBBROOT})
-
-    set(TBB "${TBB}" PARENT_SCOPE)
-endfunction()
-
-## TBBBind_2_5 package
-unset(_ov_download_tbbbind_2_5_done CACHE)
-
-#
-# The function downloads static prebuilt TBBBind_2_5 package
-# NOTE: the function should be called only we have TBB with version less 2021
-#
-function(ov_download_tbbbind_2_5)
-    if(_ov_download_tbbbind_2_5_done OR NOT ENABLE_TBBBIND_2_5)
-        return()
-    endif()
-    set(_ov_download_tbbbind_2_5_done ON CACHE BOOL "Whether prebuilt TBBBind_2_5 is already downloaded")
-
-    reset_deps_cache(TBBBIND_2_5_DIR)
-
-    if(DEFINED ENV{THIRDPARTY_SERVER_PATH})
-        set(IE_PATH_TO_DEPS "$ENV{THIRDPARTY_SERVER_PATH}")
-    elseif(DEFINED THIRDPARTY_SERVER_PATH)
-        set(IE_PATH_TO_DEPS "${THIRDPARTY_SERVER_PATH}")
-    endif()
-
-    if(WIN32 AND X86_64)
-        RESOLVE_DEPENDENCY(TBBBIND_2_5
-                ARCHIVE_WIN "tbbbind_2_5_static_win_v1.zip"
-                TARGET_PATH "${TEMP}/tbbbind_2_5"
-                ENVIRONMENT "TBBBIND_2_5_ROOT"
-                SHA256 "a67afeea8cf194f97968c800dab5b5459972908295242e282045d6b8953573c1")
-    elseif(ANDROID)
-        # don't have TBBBIND_2_5
-    elseif(LINUX AND X86_64)
-        RESOLVE_DEPENDENCY(TBBBIND_2_5
-                ARCHIVE_LIN "tbbbind_2_5_static_lin_v2.tgz"
-                TARGET_PATH "${TEMP}/tbbbind_2_5"
-                ENVIRONMENT "TBBBIND_2_5_ROOT"
-                SHA256 "865e7894c58402233caf0d1b288056e0e6ab2bf7c9d00c9dc60561c484bc90f4")
-    else()
-        message(WARNING "prebuilt TBBBIND_2_5 is not available.
-Build oneTBB from sources and set TBBROOT environment var before OpenVINO cmake configure")
+        update_deps_cache(TBB_DIR "${TBB}/cmake" "Path to TBB cmake folder")
     endif()
 
     update_deps_cache(TBBBIND_2_5_DIR "${TBBBIND_2_5}/cmake" "Path to TBBBIND_2_5 cmake folder")
+    debug_message(STATUS "tbb=" ${TBB})
 
-    set(TBBBIND_2_5 "${TBBBIND_2_5}" PARENT_SCOPE)
-endfunction()
+    if(DEFINED IE_PATH_TO_DEPS)
+        unset(IE_PATH_TO_DEPS)
+    endif()
+endif()
 
 ## OpenCV
 if(ENABLE_OPENCV)
     reset_deps_cache(OpenCV_DIR)
 
-    set(OPENCV_VERSION "4.5.2")
-    set(OPENCV_BUILD "076")
+    set(OPENCV_VERSION "4.5.5")
+    set(OPENCV_BUILD "099")
     set(OPENCV_BUILD_YOCTO "772")
 
     if(AARCH64)
@@ -250,7 +210,7 @@ if(ENABLE_OPENCV)
                     TARGET_PATH "${TEMP}/opencv_${OPENCV_VERSION}/opencv"
                     ENVIRONMENT "OpenCV_DIR"
                     VERSION_REGEX ".*_([0-9]+.[0-9]+.[0-9]+).*"
-                    SHA256 "a14f872e6b63b6ac12c7ff47fa49e578d14c14433b57f5d85ab5dd48a079938c")
+                    SHA256 "f871e3dc3f3850ce2121fccef1a056bf47de8ec692b8e70e4711382dadae7752")
         elseif(APPLE AND X86_64)
             RESOLVE_DEPENDENCY(OPENCV
                     ARCHIVE_MAC "opencv/opencv_${OPENCV_VERSION}-${OPENCV_BUILD}_osx.txz"
@@ -280,7 +240,7 @@ if(ENABLE_OPENCV)
                 set(OPENCV_HASH "db087dfd412eedb8161636ec083ada85ff278109948d1d62a06b0f52e1f04202")
             elseif((LINUX_OS_NAME STREQUAL "Ubuntu 20.04" OR LINUX_OS_NAME STREQUAL "LinuxMint 20.1") AND X86_64)
                 set(OPENCV_SUFFIX "ubuntu20")
-                set(OPENCV_HASH "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+                set(OPENCV_HASH "2fe7bbc40e1186eb8d099822038cae2821abf617ac7a16fadf98f377c723e268")
             elseif(NOT DEFINED OpenCV_DIR AND NOT DEFINED ENV{OpenCV_DIR})
                 message(FATAL_ERROR "OpenCV is not available on current platform (${LINUX_OS_NAME})")
             endif()
@@ -305,6 +265,8 @@ else()
     reset_deps_cache(OpenCV_DIR)
 endif()
 
+include(${OpenVINO_SOURCE_DIR}/src/cmake/ie_parallel.cmake)
+
 if(ENABLE_INTEL_GNA)
     reset_deps_cache(
             GNA_EXT_DIR
@@ -314,8 +276,8 @@ if(ENABLE_INTEL_GNA)
             GNA_LIB_DIR
             libGNA_INCLUDE_DIRS
             libGNA_LIBRARIES_BASE_PATH)
-        set(GNA_VERSION "03.00.00.1455.2")
-        set(GNA_HASH "e52785d3f730fefb4e794bb7ab40c8676537ef2f7c69c5b4bb89a5d3cc0bbe60")
+        set(GNA_VERSION "03.00.00.1455.0")
+        set(GNA_HASH "99891696269d8fa10116c96e6b7bda4362736881f0df8df8b56c751ee18e5820")
 
         set(FILES_TO_EXTRACT_LIST gna_${GNA_VERSION}/include)
         if(WIN32)
