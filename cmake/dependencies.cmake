@@ -1,3 +1,32 @@
+Skip to content
+Search or jump to…
+Pull requests
+Issues
+Marketplace
+Explore
+ 
+@sebastian-moticica 
+pramotowski
+/
+openvino
+Public
+forked from alexbiris/openvino
+Code
+Pull requests
+Actions
+Projects
+Wiki
+Security
+Insights
+openvino/cmake/dependencies.cmake
+@pramotowski
+pramotowski Changed OpenCV linux path to the proper one
+Latest commit 7b50e14 2 days ago
+ History
+ 22 contributors
+@ilya-lavrenov@alexbiris@ilyachur@asuhov@GlebKazantaev@AntonDudchenko@andreysapozhn@azhogov@vladislav-volkov@vinograd47@tsocha@sirzabek
+312 lines (277 sloc)  12.6 KB
+
 # Copyright (C) 2018-2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -177,8 +206,9 @@ endif()
 if(ENABLE_OPENCV)
     reset_deps_cache(OpenCV_DIR)
 
+    set(IE_PATH_TO_DEPS "http://releases.ti.intel.com/Releases/opencv/")
     set(OPENCV_VERSION "4.5.5")
-    set(OPENCV_BUILD "099")
+    set(OPENCV_BUILD "131")
     set(OPENCV_BUILD_YOCTO "772")
 
     if(AARCH64)
@@ -237,16 +267,16 @@ if(ENABLE_OPENCV)
                 set(OPENCV_HASH "cd46831b4d8d1c0891d8d22ff5b2670d0a465a8a8285243059659a50ceeae2c3")
             elseif(LINUX_OS_NAME STREQUAL "Ubuntu 18.04" AND X86_64)
                 set(OPENCV_SUFFIX "ubuntu18")
-                set(OPENCV_HASH "db087dfd412eedb8161636ec083ada85ff278109948d1d62a06b0f52e1f04202")
+                set(OPENCV_HASH "07b72209440bf2140d4a58d496ffc35bb4488e7bca231bdc04c335a495006421")
             elseif((LINUX_OS_NAME STREQUAL "Ubuntu 20.04" OR LINUX_OS_NAME STREQUAL "LinuxMint 20.1") AND X86_64)
                 set(OPENCV_SUFFIX "ubuntu20")
-                set(OPENCV_HASH "2fe7bbc40e1186eb8d099822038cae2821abf617ac7a16fadf98f377c723e268")
+                set(OPENCV_HASH "07b72209440bf2140d4a58d496ffc35bb4488e7bca231bdc04c335a495006421")
             elseif(NOT DEFINED OpenCV_DIR AND NOT DEFINED ENV{OpenCV_DIR})
                 message(FATAL_ERROR "OpenCV is not available on current platform (${LINUX_OS_NAME})")
             endif()
             RESOLVE_DEPENDENCY(OPENCV
-                    ARCHIVE_LIN "opencv/opencv_${OPENCV_VERSION}-${OPENCV_BUILD}_${OPENCV_SUFFIX}.txz"
-                    TARGET_PATH "${TEMP}/opencv_${OPENCV_VERSION}_${OPENCV_SUFFIX}/opencv"
+                    ARCHIVE_LIN "opencv/opencv_${OPENCV_VERSION}-${OPENCV_BUILD}.txz"
+                    TARGET_PATH "${TEMP}/opencv_${OPENCV_VERSION}/opencv"
                     ENVIRONMENT "OpenCV_DIR"
                     VERSION_REGEX ".*_([0-9]+.[0-9]+.[0-9]+).*"
                     SHA256 ${OPENCV_HASH})
