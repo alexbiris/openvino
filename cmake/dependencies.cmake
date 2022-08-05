@@ -181,6 +181,7 @@ if(ENABLE_OPENCV)
     set(OPENCV_VERSION "4.5.5")
     set(OPENCV_BUILD "131")
     set(OPENCV_BUILD_YOCTO "772")
+    set(OPENCV_BUILD_WINDOWS "099")
 
     if(AARCH64)
         if(DEFINED ENV{THIRDPARTY_SERVER_PATH})
@@ -206,6 +207,7 @@ if(ENABLE_OPENCV)
         endif()
     else()
         if(WIN32 AND X86_64)
+            set(OPENCV_BUILD "${OPENCV_BUILD_WINDOWS}")
             RESOLVE_DEPENDENCY(OPENCV
                     ARCHIVE_WIN "opencv/opencv_${OPENCV_VERSION}-${OPENCV_BUILD}.txz"
                     TARGET_PATH "${TEMP}/opencv_${OPENCV_VERSION}/opencv"
