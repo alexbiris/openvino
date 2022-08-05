@@ -1,32 +1,3 @@
-Skip to content
-Search or jump to…
-Pull requests
-Issues
-Marketplace
-Explore
- 
-@sebastian-moticica 
-pramotowski
-/
-openvino
-Public
-forked from alexbiris/openvino
-Code
-Pull requests
-Actions
-Projects
-Wiki
-Security
-Insights
-openvino/cmake/dependencies.cmake
-@pramotowski
-pramotowski Changed OpenCV linux path to the proper one
-Latest commit 7b50e14 2 days ago
- History
- 22 contributors
-@ilya-lavrenov@alexbiris@ilyachur@asuhov@GlebKazantaev@AntonDudchenko@andreysapozhn@azhogov@vladislav-volkov@vinograd47@tsocha@sirzabek
-312 lines (277 sloc)  12.6 KB
-
 # Copyright (C) 2018-2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 #
